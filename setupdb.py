@@ -4,9 +4,10 @@ import random
 
 sys.path.append('c:\\dev\\pytWinc\\betsy-webshop')
 sys.path.append('c:\\dev\\pytWinc\\betsy-webshop\\utils')
-from utils.utils import assign_payment_methods, assign_tags, create_sample_data_product
+from utils.utils import assign_tags, create_sample_data_product
 from utils.utils import create_sample_data_user, random_date, random_time
 
+from data.product_names_with_descriptions import sample_product_names_with_descriptions
 
 # CONFIGURATION:
 TRANSACTION_YEAR = 2028
@@ -15,13 +16,13 @@ TRANSACTION_START_OF_DAY_HOUR = 8
 TRANSACTION_END_OF_DAY_HOUR = 21
 PRODUCT_RANGE = 6 # choose 4 or higher (because list transactions below assumes product_range >= 4)
 # product_assortment == the collection of different products in the Betsy Webshop
-NR_OF_PRODUCTS_FOR_EACH_PRODUCT = 30 
+QUANTITY_OF_EACH_PRODUCT = 30 
 NR_OF_TAGS_PER_PRODUCT_LOWER_BOUNDARY = 2
 NR_OF_TAGS_PER_PRODUCT_UPPER_BOUNDARY = 6
 NR_OF_PAYMENT_METHODS_PER_USER_LOWER_BOUNDARY = 1
 NR_OF_PAYMENT_METHODS_PER_USER_UPPER_BOUNDARY = 4
 '''
-if product range = apple, laptop, banana, then nr_of_products_for_each_product = 30 means that there are 30 apples, 30 laptops, 30 bananas in the Betsy Webshop after running setupdb.py
+if product range = apple, laptop, banana, then QUANTITY_OF_EACH_PRODUCT = 30 means that there are 30 apples, 30 laptops, 30 bananas in the Betsy Webshop after running setupdb.py
 '''
 
 def main():
@@ -91,7 +92,11 @@ def populate_database():
         UserPaymentMethod.create(user=user_paymentmethod[0], payment_method=user_paymentmethod[1])
 
 
-    products = create_sample_data_product(PRODUCT_RANGE, NR_OF_PRODUCTS_FOR_EACH_PRODUCT)
+
+    # sample_product_names = ['Crimson Sky', 'Minty Fresh', 'Golden Harvest', 'Sapphire Sea', 'Copper Canyon', 'Emerald Isle', 'Midnight Sun', 'Silver Lining', 'Ruby Red', 'Ocean Breeze', 'Bronze Beauty', 'Forest Green', 'Amber Glow', 'Desert Sand', 'Platinum Pearl', 'Tropical Paradise', 'Rose Gold', 'Autumn Leaves', 'Ivory Tower', 'Sunset Boulevard', 'Lavender Fields', 'Electric Blue', 'Mountain Peak', 'Cherry Blossom', 'Polar Ice', 'Wildfire Red', 'Mystic River', 'Midnight Blue', 'Summer Breeze', 'Crimson Tide', 'Jungle Fever', 'Winter Wonderland', 'Sandy Beach', 'Harvest Moon', 'Midnight Magic', 'Golden Gate', 'Sapphire Sky', 'Copper Mountain', 'Emerald City', 'Silver Stream', 'Ruby Rose', 'Ocean View', 'Bronze Medal', 'Forest Trail', 'Amber Waves', 'Desert Mirage', 'Platinum Perfection', 'Tropical Oasis', 'Rose Petals', 'Autumn Harvest']
+
+
+    products = create_sample_data_product(PRODUCT_RANGE, QUANTITY_OF_EACH_PRODUCT, sample_product_names_with_descriptions)
     for product in products:
         Product.create(user_id=product["user_id"], name=product["name"], description=product["description"], minimum_sales_price=product["minimum_sales_price"], quantity=product["quantity"])
 
