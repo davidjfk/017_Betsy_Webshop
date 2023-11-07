@@ -1,8 +1,25 @@
 from models import *
 import os, sys
+
 sys.path.append('c:\\dev\\pytWinc\\betsy-webshop')
 sys.path.append('c:\\dev\\pytWinc\\betsy-webshop\\utils')
-from utils.utils import create_sample_data_product, create_sample_data_user
+from utils.utils import assign_tags, create_sample_data_product, create_sample_data_user, random_date, random_time
+
+
+# CONFIGURATION:
+TRANSACTION_YEAR = 2028
+TRANSACTION_WEEK = 26
+TRANSACTION_START_OF_DAY_HOUR = 8
+TRANSACTION_END_OF_DAY_HOUR = 21
+PRODUCT_RANGE = 6 # choose 4 or higher (list transactions assumes product_range >= 4)
+# product_assortment == the collection of different products in the Betsy Webshop
+NR_OF_PRODUCTS_FOR_EACH_PRODUCT = 30 
+NR_OF_TAGS_PER_PRODUCT_LOWER_BOUNDARY = 2
+NR_OF_TAGS_PER_PRODUCT_UPPER_BOUNDARY = 6
+'''
+if product range = apple, laptop, banana, then nr_of_products_for_each_product = 30 means that there are 30 apples, 30 laptops, 30 bananas in the Betsy Webshop after running setupdb.py
+'''
+
 
 def main():
     # delete_database()
@@ -27,13 +44,14 @@ def populate_database():
 
 
     payment_methods = [
-        ["credit_card", "Pay after the purchase transaction", "world", True, 0.035],
-        ["direct_debit",  "bank-to-bank transfer system", "Europe", True, 0.00],     
-        ["ideal", "bank-to-bank transfer system", "Netherlands", True, 0.11],
-        ["paypal", "worldwide payment system for individuals and businesses", "world", True, 0.025]
+        ["credit_card", "Pay after the purchase transaction", "world", "yes", 0.035],
+        ["direct_debit",  "bank-to-bank transfer system", "Europe", "yes", 0.00],     
+        ["ideal", "bank-to-bank transfer system", "Netherlands", "yes", 0.11],
+        ["paypal", "worldwide payment system for individuals and businesses", "world", "yes", 0.025]
     ]
     for payment_method in payment_methods:
         PaymentMethod.create(name=payment_method[0], description=payment_method[1], active=payment_method[3], fee=payment_method[4])
+
 
     user_paymentmethods = [
         [1, 2],
@@ -55,32 +73,63 @@ def populate_database():
     for user_paymentmethod in user_paymentmethods:
         UserPaymentMethod.create(user=user_paymentmethod[0], payment_method=user_paymentmethod[1])
 
-    products = create_sample_data_product(6)
+
+    products = create_sample_data_product(PRODUCT_RANGE, NR_OF_PRODUCTS_FOR_EACH_PRODUCT)
     for product in products:
-        Product.create(user_id=product["user_id"], name=product["name"], description=product["description"], price=product["price"], quantity=product["quantity"])
+        Product.create(user_id=product["user_id"], name=product["name"], description=product["description"], minimum_sales_price=product["minimum_sales_price"], quantity=product["quantity"])
+
 
     transactions = [
-        [1, 2, 3, ],
-        [1, 3, 4, ],
-        [2, 2, 5, ],
-        [2, 4, 6, ],
-        [3, 1, 2, ],
-        [3, 2, 3, ],
-        [3, 3, 4, ],
-        [3, 4, 5, ],
-        [4, 1, 3, ],
-        [4, 2, 4, ],
-        [5, 3, 6, ],
-        [5, 4, 7, ],
-        [6, 1, 4, ],
-        [6, 2, 5, ],
-        [6, 4, 6, ],
+        [1, 2, 3, 3],
+        [2, 3, 4, 4],
+        [2, 2, 5, 5],
+        [2, 4, 6, 6],
+        [3, 1, 2, 3], # selling break-even
+        [3, 2, 3, 7],
+        [3, 3, 4, 7],
+        [3, 4, 5, 9],
+        [4, 1, 3, 6],
+        [4, 2, 4, 11],
+        [5, 3, 6, 8],
+        [5, 4, 7, 7],
+        [6, 1, 7, 3], # selling at a loss
+        [6, 2, 5, 10],
+        [6, 4, 10, 27], # selling at a huge profit
     ]
+    '''
+    product_id and price have the same number: e.g.
+    product_id=2, price=2 euro
+    product_id=3, price=3 euro
+    product_id=4, price=4 euro
+    etc.
+
+    This is done on purpose to make it easier to read the data.
+
+    e.g. last nested list in list transactions above:
+    product_id = 4, so the minimum_viable_price is 4 euro. Seller sells product for 27, 
+    making a huge profit.
+    '''
     for transaction in transactions:
-        Transaction.create(user_payment_method=transaction[0], product=transaction[1])
+        Transaction.create(user_payment_method=transaction[0], product=transaction[1], quantity=transaction[2], price=transaction[3], date=random_date(TRANSACTION_YEAR, TRANSACTION_WEEK), time=random_time(TRANSACTION_START_OF_DAY_HOUR, TRANSACTION_END_OF_DAY_HOUR))
+
+
+    tags = ["book", "clothing", "electronics", "fashion", "finance", "food", "games", "home_appliance", "household_goods" "insurance", "literature", "mobile_phone", "music", "musical_instrument", "pet", "science", "sport", "shoes", "software", "sport", "toys", "travel"]
+    for tag in tags:
+        Tag.create(name=tag)
+
+
+    product_list = []
+    for product in products:
+        product_list.append({'name': product})
+    products_with_tags = assign_tags(products, tags, NR_OF_TAGS_PER_PRODUCT_LOWER_BOUNDARY, NR_OF_TAGS_PER_PRODUCT_UPPER_BOUNDARY)  
+    # print(products_with_tags)
+    for product_with_tags in products_with_tags:
+        for tag in product_with_tags['tags']:
+            ProductTag.create(product=product_with_tags['name'], tag=tag)
 
 
     db.close()
 
 if __name__ == "__main__":
     main()
+

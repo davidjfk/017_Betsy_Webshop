@@ -39,7 +39,7 @@ class Product(BaseModel):
     user = ForeignKeyField(User, backref="products")
     name = CharField()
     description = TextField()
-    price = DecimalField()
+    minimum_sales_price = DecimalField()
     quantity = IntegerField()
 
 class PaymentMethod(BaseModel):
@@ -57,7 +57,7 @@ class Transaction(BaseModel):
     id = AutoField()
     user_payment_method = ForeignKeyField(UserPaymentMethod, backref="transactions") # backref: get all transactions for this payment method
     product = ForeignKeyField(Product, backref="transactions") # backref: get all transactions for this product
-    User = ForeignKeyField(User, backref="transactions") # backref: get all transactions for this user
+    # User = ForeignKeyField(User, backref="transactions") # backref: get all transactions for this user
     quantity = IntegerField()
     price = DecimalField()
     date = DateField()
