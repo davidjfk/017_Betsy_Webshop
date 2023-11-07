@@ -33,31 +33,37 @@ class User(BaseModel):
     password = CharField()
 
 
+
 class Product(BaseModel):
     id = AutoField()
     user = ForeignKeyField(User, backref="products")
     name = CharField()
     description = TextField()
-    price = DecimalField()
-    available = BooleanField()
+    minimum_sales_price = DecimalField()
+    quantity = IntegerField()
 
 class PaymentMethod(BaseModel):
     id = AutoField()
-    user = ForeignKeyField(User, backref="payment_methods")
     name = CharField()
     description = TextField()
     active = BooleanField()
-    fee = CharField() # percentage, e.g. 0.01 = 1% // amount: 1.00 = 1 euro, 0.50 = 50 cents // "no extra costs"
+    fee = DecimalField() # fee is a percentage of the transaction amount
+
+class UserPaymentMethod(BaseModel):
+    user = ForeignKeyField(User, backref='payment_methods')
+    payment_method = ForeignKeyField(PaymentMethod, backref='users')
 
 class Transaction(BaseModel):
     id = AutoField()
-    payment_method = ForeignKeyField(PaymentMethod, backref="transactions") # backref: get all transactions for this payment method
+    user_payment_method = ForeignKeyField(UserPaymentMethod, backref="transactions") # backref: get all transactions for this payment method
     product = ForeignKeyField(Product, backref="transactions") # backref: get all transactions for this product
-    User = ForeignKeyField(User, backref="transactions") # backref: get all transactions for this user
+    # User = ForeignKeyField(User, backref="transactions") # backref: get all transactions for this user
     quantity = IntegerField()
     price = DecimalField()
     date = DateField()
     time = TimeField()
+
+
 
 class Tag(BaseModel):
     id = AutoField()
