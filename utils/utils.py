@@ -15,11 +15,11 @@ def assign_tags(products, tags, nr_of_tags_per_product_lower_boundary, nr_of_tag
         product['tags'] = random.sample(tags, random.randint(2, 6))
     return products
 
-def create_sample_data_product(product_range: int, product_quantity: int, sample_product_names_with_descriptions: list) -> list[list[str]]:
+def create_sample_data_product(product_range: int, product_quantity: int, sample_product_names_with_descriptions: list, NR_OF_USERS: int) -> list[list[str]]:
     users = []
     for i in range(product_range):
         user = {
-            "user_id": f"{i + 1}", 
+            "user_id": f"{random.randint(1, NR_OF_USERS)}", 
             # random user_id makes fn more difficult to test.
             "name": f"{sample_product_names_with_descriptions[i][0]}", 
             "description": f"{sample_product_names_with_descriptions[i][1]}",

@@ -14,15 +14,20 @@ TRANSACTION_YEAR = 2028
 TRANSACTION_WEEK = 26
 TRANSACTION_START_OF_DAY_HOUR = 8
 TRANSACTION_END_OF_DAY_HOUR = 21
-PRODUCT_RANGE = 6 # choose 4 or higher (because list transactions below assumes product_range >= 4)
-# product_assortment == the collection of different products in the Betsy Webshop
-QUANTITY_OF_EACH_PRODUCT = 30 
+PRODUCT_RANGE = 40 
+'''
+    product_range ==product_assortment == the collection of different products in the Betsy Webshop
+    choose 4 or higher (because list transactions below assumes product_range >= 4)
+    max 50, because in file product_names_with_descriptions.py (in folder data) there are 50 products. 
+'''
+PRODUCT_QUANTITY = 30  
 NR_OF_TAGS_PER_PRODUCT_LOWER_BOUNDARY = 2
 NR_OF_TAGS_PER_PRODUCT_UPPER_BOUNDARY = 6
 NR_OF_PAYMENT_METHODS_PER_USER_LOWER_BOUNDARY = 1
 NR_OF_PAYMENT_METHODS_PER_USER_UPPER_BOUNDARY = 4
+NR_OF_USERS = 6 # user == dual-sided marketplace participant == seller and/or buyer
 '''
-if product range = apple, laptop, banana, then QUANTITY_OF_EACH_PRODUCT = 30 means that there are 30 apples, 30 laptops, 30 bananas in the Betsy Webshop after running setupdb.py
+if product range = apple, laptop, banana, then PRODUCT_QUANTITY = 30 means that there are 30 apples, 30 laptops, 30 bananas in the Betsy Webshop after running setupdb.py
 '''
 
 def main():
@@ -41,7 +46,8 @@ def populate_database():
 
     db.create_tables([User, Product, PaymentMethod, Transaction, Tag, ProductTag, UserPaymentMethod])
 
-    users = create_sample_data_user(6)
+
+    users = create_sample_data_user(NR_OF_USERS)
     for user in users:
         print(user)
         User.create(last_name=user["last_name"], first_name=user["first_name"], phone_number=user["phone_number"], email=user["email"], street=user["street"], house_number=user["house_number"], postal_code=user["postal_code"], city=user["city"], country=user["country"], password=user["password"])
@@ -96,7 +102,7 @@ def populate_database():
     # sample_product_names = ['Crimson Sky', 'Minty Fresh', 'Golden Harvest', 'Sapphire Sea', 'Copper Canyon', 'Emerald Isle', 'Midnight Sun', 'Silver Lining', 'Ruby Red', 'Ocean Breeze', 'Bronze Beauty', 'Forest Green', 'Amber Glow', 'Desert Sand', 'Platinum Pearl', 'Tropical Paradise', 'Rose Gold', 'Autumn Leaves', 'Ivory Tower', 'Sunset Boulevard', 'Lavender Fields', 'Electric Blue', 'Mountain Peak', 'Cherry Blossom', 'Polar Ice', 'Wildfire Red', 'Mystic River', 'Midnight Blue', 'Summer Breeze', 'Crimson Tide', 'Jungle Fever', 'Winter Wonderland', 'Sandy Beach', 'Harvest Moon', 'Midnight Magic', 'Golden Gate', 'Sapphire Sky', 'Copper Mountain', 'Emerald City', 'Silver Stream', 'Ruby Rose', 'Ocean View', 'Bronze Medal', 'Forest Trail', 'Amber Waves', 'Desert Mirage', 'Platinum Perfection', 'Tropical Oasis', 'Rose Petals', 'Autumn Harvest']
 
 
-    products = create_sample_data_product(PRODUCT_RANGE, QUANTITY_OF_EACH_PRODUCT, sample_product_names_with_descriptions)
+    products = create_sample_data_product(PRODUCT_RANGE, PRODUCT_QUANTITY, sample_product_names_with_descriptions, NR_OF_USERS)
     for product in products:
         Product.create(user_id=product["user_id"], name=product["name"], description=product["description"], minimum_sales_price=product["minimum_sales_price"], quantity=product["quantity"])
 
