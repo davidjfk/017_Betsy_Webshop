@@ -8,6 +8,8 @@ import datetime
 # random_date(year: int, week: int) -> str
 # random_time(transaction_start_of_day_hour, transaction_end_of_day_hour)
 
+
+
 def assign_tags(products, tags, nr_of_tags_per_product_lower_boundary, nr_of_tags_per_product_upper_boundary):
     for product in products:
         product['tags'] = random.sample(tags, random.randint(2, 6))

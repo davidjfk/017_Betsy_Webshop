@@ -1,9 +1,11 @@
 from models import *
 import os, sys
+import random
 
 sys.path.append('c:\\dev\\pytWinc\\betsy-webshop')
 sys.path.append('c:\\dev\\pytWinc\\betsy-webshop\\utils')
-from utils.utils import assign_tags, create_sample_data_product, create_sample_data_user, random_date, random_time
+from utils.utils import assign_payment_methods, assign_tags, create_sample_data_product
+from utils.utils import create_sample_data_user, random_date, random_time
 
 
 # CONFIGURATION:
@@ -11,15 +13,16 @@ TRANSACTION_YEAR = 2028
 TRANSACTION_WEEK = 26
 TRANSACTION_START_OF_DAY_HOUR = 8
 TRANSACTION_END_OF_DAY_HOUR = 21
-PRODUCT_RANGE = 6 # choose 4 or higher (list transactions assumes product_range >= 4)
+PRODUCT_RANGE = 6 # choose 4 or higher (because list transactions below assumes product_range >= 4)
 # product_assortment == the collection of different products in the Betsy Webshop
 NR_OF_PRODUCTS_FOR_EACH_PRODUCT = 30 
 NR_OF_TAGS_PER_PRODUCT_LOWER_BOUNDARY = 2
 NR_OF_TAGS_PER_PRODUCT_UPPER_BOUNDARY = 6
+NR_OF_PAYMENT_METHODS_PER_USER_LOWER_BOUNDARY = 1
+NR_OF_PAYMENT_METHODS_PER_USER_UPPER_BOUNDARY = 4
 '''
 if product range = apple, laptop, banana, then nr_of_products_for_each_product = 30 means that there are 30 apples, 30 laptops, 30 bananas in the Betsy Webshop after running setupdb.py
 '''
-
 
 def main():
     # delete_database()
@@ -44,32 +47,46 @@ def populate_database():
 
 
     payment_methods = [
-        ["credit_card", "Pay after the purchase transaction", "world", "yes", 0.035],
-        ["direct_debit",  "bank-to-bank transfer system", "Europe", "yes", 0.00],     
-        ["ideal", "bank-to-bank transfer system", "Netherlands", "yes", 0.11],
-        ["paypal", "worldwide payment system for individuals and businesses", "world", "yes", 0.025]
+        ["credit_card", "Pay after the purchase transaction", "world", True, 0.035],
+        ["direct_debit",  "bank-to-bank transfer system", "Europe", True, 0.00],     
+        ["ideal", "bank-to-bank transfer system", "Netherlands", True, 0.11],
+        ["paypal", "worldwide payment system for individuals and businesses", "world", True, 0.025]
     ]
     for payment_method in payment_methods:
         PaymentMethod.create(name=payment_method[0], description=payment_method[1], active=payment_method[3], fee=payment_method[4])
 
-
-    user_paymentmethods = [
-        [1, 2],
-        [1, 3],
-        [2, 2],
-        [2, 4],
-        [3, 1],
-        [3, 2],
-        [3, 3],
-        [3, 4],
-        [4, 1],
-        [4, 2],
-        [5, 3],
-        [5, 4],
-        [6, 1],
-        [6, 2],
-        [6, 4],
-    ]
+    
+    # if there are e.g. 4 payment methods, then I needs this: "payment_method_ids = [1,2,3,4]", 5 payment methods: "payment_method_ids = [1,2,3,4,5]", etc.
+    payment_method_ids = [(payment_methods.index(sublist) + 1) for sublist in payment_methods] # possible to add paymentmethod later on, wthout breaking the code.
+    # goal: for each user, assign a random number of payment methods:
+    user_list = []
+    for i in range(len([user for user in users if isinstance(user, dict)])):
+        user_list.append({'user_id': i + 1}) # 
+        user_list[i]['payment_methods'] = random.sample(payment_method_ids, random.randint(NR_OF_PAYMENT_METHODS_PER_USER_LOWER_BOUNDARY, NR_OF_PAYMENT_METHODS_PER_USER_UPPER_BOUNDARY))
+    # print(user_list)
+    user_paymentmethods = []
+    for user in user_list:
+        for payment_method in user['payment_methods']:
+            user_paymentmethods.append([user['user_id'], payment_method])
+    # print(user_paymentmethods)
+    # problem: following list works, but is hard-coded:
+    # user_paymentmethods = [
+    #     [1, 2],
+    #     [1, 3],
+    #     [2, 2],
+    #     [2, 4],
+    #     [3, 1],
+    #     [3, 2],
+    #     [3, 3],
+    #     [3, 4],
+    #     [4, 1],
+    #     [4, 2],
+    #     [5, 3],
+    #     [5, 4],
+    #     [6, 1],
+    #     [6, 2],
+    #     [6, 4],
+    # ]
     for user_paymentmethod in user_paymentmethods:
         UserPaymentMethod.create(user=user_paymentmethod[0], payment_method=user_paymentmethod[1])
 
@@ -79,6 +96,9 @@ def populate_database():
         Product.create(user_id=product["user_id"], name=product["name"], description=product["description"], minimum_sales_price=product["minimum_sales_price"], quantity=product["quantity"])
 
 
+    '''
+    Hard-coded list of transactions (on purpose, so you can quickly manually create or tweak custom transaction(s) for testing purposes):
+    '''
     transactions = [
         [1, 2, 3, 3],
         [2, 3, 4, 4],
