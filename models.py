@@ -10,14 +10,17 @@ from peewee import (
     IntegerField,
     Model,
     SqliteDatabase,
+    PostgresqlDatabase,
     TimeField,
 )
+from playhouse.sqlite_ext import SqliteExtDatabase
 
 db = SqliteDatabase("database.db")
 
 class BaseModel(Model):
     class Meta:
         database = db
+
 
 class User(BaseModel):
     id = AutoField()
@@ -42,10 +45,10 @@ class Product(BaseModel):
     minimum_sales_price = DecimalField(max_digits=10, decimal_places=2)
     quantity = IntegerField()
 
-    # class Meta:
-    #     indexes = (
-    #         (('user', 'name'), True),
-    #     )
+    class Meta:
+        indexes = (
+            (('user', 'name'), True),
+        )
     '''
         Create a unique index on user and name. This is to prevent a user from creating multiple products with the same name.
         If e.g. user A has product B in quantity of 10, and user A wants to add another 5 of product B, the quantity of product B

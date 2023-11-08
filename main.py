@@ -5,14 +5,21 @@ __human_name__ = "Betsy Webshop"
 # Add your code after this line
 
 from models import *
-from peewee import DoesNotExist, fn
+
+from peewee import DoesNotExist
+from peewee import fn
+from Levenshtein import distance as lev
+
+from playhouse.sqlite_ext import SqliteExtDatabase
 from setupdb import TRANSACTION_YEAR, TRANSACTION_WEEK, TRANSACTION_START_OF_DAY_HOUR, TRANSACTION_END_OF_DAY_HOUR
 from utils.utils import random_date, random_time
 
 def main():
 
-    # search("Minty Fresh") # search for products by name and description
-    search("foo_bar") # result: message: "Search term 'foo_bar' not found."
+    # search("minty Fresh") # search for products by name and description
+    # search("foo_bar") # result: message: "Search term 'foo_bar' not found."
+
+    search_with_spelling_mistakes("Ruby") # search for products by name and description
 
     # list_user_products(user_id=1) # For readability, I added the user_id as an argument.
     # list_user_products(user_id=3) # result is a list of products for user_id=3.
@@ -41,9 +48,9 @@ def search(term):
         should be case-insensitive
     2. search for products by name and description
     '''
-    query = Product.select().where(
-    (Product.name.contains(term)) | (Product.description.contains(term))
-    )
+    query = Product.select().where(fn.lower(Product.name).contains(term.lower()) | fn.lower(Product.description).contains(term.lower()))
+    # (Product.name.contains(term)) | (Product.description.contains(term))
+    # )
     if query.exists():
         for row in query:
             print(row.id, row.user_id, row.name, row.description)
@@ -63,29 +70,115 @@ def search(term):
     # return query # best practice: return value for e.g. testing purposes (out of scope of this exercise)
 
 
-def search_with_spelling_mistakes(term):
+def levenshtein_distance(s1, s2):
+    # source of this fn:  https://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance#Python
+    if len(s1) < len(s2):
+        return levenshtein_distance(s2, s1)
+
+    # len(s1) >= len(s2)
+    if len(s2) == 0:
+        return len(s1)
+
+    previous_row = range(len(s2) + 1)
+    for i, c1 in enumerate(s1):
+        current_row = [i + 1]
+        for j, c2 in enumerate(s2):
+            insertions = previous_row[j + 1] + 1 # j+1 instead of j since previous_row and current_row are one character longer
+            deletions = current_row[j] + 1       # than s2
+            substitutions = previous_row[j] + (c1 != c2)
+            current_row.append(min(insertions, deletions, substitutions))
+        previous_row = current_row
+    
+    return previous_row[-1]
+
+
+def search_with_spelling_mistakes(term): # activate 'term' as fn-argument 
+    '''
+    status: proof of concept works (231108)
+    '''
+    
     '''
     requirements:
     1. Finally the search should account for spelling mistakes made by users 
         and return products even if a spelling error is present.
     '''
-    query = Product.select().where(
-    (Product.name.contains(term)) | (Product.description.contains(term))
-    )
 
 
-    query1 = Product.select().where(fn.SOUNDEX(Product.name) == fn.SOUNDEX(term))
+    # Fetch data from the database
+    query = Product.select()
+    data = [(row, row.name) for row in query] 
+    '''
+    I create tuple instead of just row.name, because I
+    need entire product-row instead of just the row.name in the final result.
+    '''
+    # Use the levenshtein_distance function to process the data
+    results = [(item, (levenshtein_distance(item[1], 'KrimsoM Sky') < 4)) for item in data] 
+    # 2do: hard-coded search term: 'KrimsoM Sky' --> 2do: make fn argument.
+    # legenda: item[1] == row.name == product.name
+    # 2do: make '4' a fn-argument, so levenshtein's distance becomes dynamic. 
 
-    # Use the fn.LEVENSHTEIN() function to calculate the edit distance between two strings
-    # query2 = Product.select().where(fn.LEVENSHTEIN(Product.name, term) <= 2)
+    for result in results:
+        print(result)
+        # 2do next: filter the rows with result 'True' in each row (look at last value in the tuple for each row)
+    
 
-    if query == []:
-        print(f"Search term '{term}' not found.")
-        return f"Search term '{term}' not found."
-    for row in query:
-        print(row.id, row.user_id, row.name, row.description)
-        print('-' * 40)
-    return query # best practice: return value for e.g. testing purposes (out of scope of this exercise)
+    '''
+    e.g. of result:
+
+    ((<Product: 1>, 'Crimson Sky'), True)
+    ((<Product: 2>, 'Minty Fresh'), False)
+    ((<Product: 3>, 'Golden Harvest'), False)
+    ((<Product: 4>, 'Sapphire Sea'), False)
+    ((<Product: 5>, 'Copper Canyon'), False)
+    ((<Product: 6>, 'Emerald Isle'), False)
+    ((<Product: 7>, 'Midnight Sun'), False)
+    ((<Product: 8>, 'Silver Lining'), False)
+    ((<Product: 9>, 'Ruby Red'), False)
+    ((<Product: 10>, 'Ocean Breeze'), False)
+    
+    '''
+
+    # query = Product.select().where(
+    # (Product.name.contains(term)) | (Product.description.contains(term))
+    # )
+
+#    query = "SELECT * FROM product WHERE name = 'Crimson Sky'" # works (1 result)
+#     query = "SELECT * FROM product WHERE name = 'Crimson Sk'" # works ( 0 results)
+#     query = "SELECT * FROM product WHERE LEVENSHTEIN(name, 'Crimson Sky') <= 2;" # works ( 0 results)
+#     cursor = db.execute_sql(query)
+#     for row in cursor.fetchall():
+#         print(row) 
+    # query = Product.select().where((lev(Product.name, term) < 1))
+    # query2 = Product.select().where(fn.editdist(Product.description, term) <= 2)
+    # query = query1 | query2
+
+    # # Execute the query to get the results
+    # results = query.execute()
+    # print('results:')
+    # print(results)
+    # print('bla')
+    # # Print the results
+    # for product in results:
+    #     print(product , product.name, product.description)
+
+    # # Use the fn.LEVENSHTEIN() function to calculate the edit distance between two strings
+    # query = Product.select().where(fn.LEVENSHTEIN(Product.name, term) <= 2)
+
+    # query = Product.select().where(fn.SOUNDEX(Product.description) == fn.SOUNDEX(term))
+
+    # # Use the fn.LEVENSHTEIN() function to calculate the edit distance between two strings
+    # query4 = Product.select().where(fn.LEVENSHTEIN(Product.description, term) <= 2)
+
+    # query = query1 | query2 | query3 | query4
+
+    # if query.exists():
+    #     for row in query:
+    #         print(row.id, row.user_id, row.name, row.description)
+    #         print('-' * 40)
+    #     return query # best practice: return value for e.g. testing purposes (out of scope of this exercise)
+    # else:
+    #     print(f"Search term '{term}' not found.")
+    #     return f"Search term '{term}' not found."
 
 
 
