@@ -66,7 +66,7 @@ class Transaction(BaseModel):
 
 class Tag(BaseModel):
     id = AutoField()
-    name = CharField()
+    name = CharField(unique=True)
 
 class ProductTag(BaseModel):
     id = AutoField()
