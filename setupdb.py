@@ -4,7 +4,8 @@ import random
 
 sys.path.append('c:\\dev\\pytWinc\\betsy-webshop')
 sys.path.append('c:\\dev\\pytWinc\\betsy-webshop\\utils')
-from utils.utils import assign_tags, create_sample_data_product
+from utils.utils import assign_tags, connectUsersToPaymentMethods
+from utils.utils import connectProductsToTags, create_sample_data_product
 from utils.utils import create_sample_data_user, random_date, random_time
 
 from data.product_names_with_descriptions import sample_product_names_with_descriptions
@@ -63,20 +64,9 @@ def populate_database():
     for payment_method in payment_methods:
         PaymentMethod.create(name=payment_method[0], description=payment_method[1], active=payment_method[3], fee=payment_method[4])
 
-    
-    # if there are e.g. 4 payment methods, then I needs this: "payment_method_ids = [1,2,3,4]", 5 payment methods: "payment_method_ids = [1,2,3,4,5]", etc.
-    payment_method_ids = [(payment_methods.index(sublist) + 1) for sublist in payment_methods] # possible to add paymentmethod later on, wthout breaking the code.
-    # goal: for each user, assign a random number of payment methods:
-    list_with_dicts = []
-    for i in range(len(users)):
-        list_with_dicts.append({'user_id': i + 1}) # 
-        list_with_dicts[i]['payment_methods'] = random.sample(payment_method_ids, random.randint(NR_OF_PAYMENT_METHODS_PER_USER_LOWER_BOUNDARY, NR_OF_PAYMENT_METHODS_PER_USER_UPPER_BOUNDARY))
-    # print(user_list)
-    user_paymentmethods = []
-    for user in list_with_dicts:
-        for payment_method in user['payment_methods']:
-            user_paymentmethods.append([user['user_id'], payment_method])
-    # print(user_paymentmethods)
+
+
+    user_paymentmethods = connectUsersToPaymentMethods(users, payment_methods, NR_OF_PAYMENT_METHODS_PER_USER_LOWER_BOUNDARY, NR_OF_PAYMENT_METHODS_PER_USER_UPPER_BOUNDARY)
     # problem: following list works, but is hard-coded:
     # user_paymentmethods = [
     #     [1, 2],
@@ -99,17 +89,14 @@ def populate_database():
         UserPaymentMethod.create(user=user_paymentmethod[0], payment_method=user_paymentmethod[1])
 
 
-
-    # sample_product_names = ['Crimson Sky', 'Minty Fresh', 'Golden Harvest', 'Sapphire Sea', 'Copper Canyon', 'Emerald Isle', 'Midnight Sun', 'Silver Lining', 'Ruby Red', 'Ocean Breeze', 'Bronze Beauty', 'Forest Green', 'Amber Glow', 'Desert Sand', 'Platinum Pearl', 'Tropical Paradise', 'Rose Gold', 'Autumn Leaves', 'Ivory Tower', 'Sunset Boulevard', 'Lavender Fields', 'Electric Blue', 'Mountain Peak', 'Cherry Blossom', 'Polar Ice', 'Wildfire Red', 'Mystic River', 'Midnight Blue', 'Summer Breeze', 'Crimson Tide', 'Jungle Fever', 'Winter Wonderland', 'Sandy Beach', 'Harvest Moon', 'Midnight Magic', 'Golden Gate', 'Sapphire Sky', 'Copper Mountain', 'Emerald City', 'Silver Stream', 'Ruby Rose', 'Ocean View', 'Bronze Medal', 'Forest Trail', 'Amber Waves', 'Desert Mirage', 'Platinum Perfection', 'Tropical Oasis', 'Rose Petals', 'Autumn Harvest']
-
-
     products = create_sample_data_product(PRODUCT_RANGE, PRODUCT_QUANTITY, sample_product_names_with_descriptions, NR_OF_USERS)
     for product in products:
         Product.create(user_id=product["user_id"], name=product["name"], description=product["description"], minimum_sales_price=product["minimum_sales_price"], quantity=product["quantity"])
 
 
     '''
-    Hard-coded list of transactions (on purpose, so you can quickly manually create or tweak custom transaction(s) for testing purposes):
+    Hard-coded list of transactions (on purpose, so you can quickly manually create or tweak custom transaction(s) 
+    for testing purposes):
     '''
     transactions = [
         [1, 2, 3, 3],
@@ -149,24 +136,10 @@ def populate_database():
         Tag.create(name=tag)
 
 
-    # if there are e.g. 4 tags, then I needs this: "tag_ids = [1,2,3,4]", 5 tag_ids: "tag_ids = [1,2,3,4,5]", etc.
-    tag_ids = list(map(lambda x: tags.index(x) + 1, tags)) # possible to add tags later on, wthout breaking the code.
-    # goal: for each user, assign a random number of payment methods:
-    
-    list_with_dicts = []
-    for i in range(len(products)):
-        list_with_dicts.append({'product_id': i + 1}) # 
-        list_with_dicts[i]['tags'] = random.sample(tag_ids, random.randint(NR_OF_TAGS_PER_PRODUCT_LOWER_BOUNDARY, NR_OF_TAGS_PER_PRODUCT_UPPER_BOUNDARY))
-    print('list with dicts:')
-    print(list_with_dicts)
-    product_tags = []
-    for product in list_with_dicts:
-        for tag in product['tags']:
-            product_tags.append([product['product_id'], tag])
+    product_tags = connectProductsToTags(products, tags, NR_OF_TAGS_PER_PRODUCT_LOWER_BOUNDARY, NR_OF_TAGS_PER_PRODUCT_UPPER_BOUNDARY)
 
     for product_tag in product_tags:
         ProductTag.create(product=product_tag[0], tag=product_tag[1])
-
 
     '''
         status: code below works, but...in the table, product_id is filled with the product name, 
@@ -184,10 +157,7 @@ def populate_database():
             ProductTag.create(product=product_with_tags['name'], tag=tag)
     '''
 
-
-
     db.close()
 
 if __name__ == "__main__":
     main()
-

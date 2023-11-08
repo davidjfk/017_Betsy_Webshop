@@ -15,6 +15,47 @@ def assign_tags(products, tags, nr_of_tags_per_product_lower_boundary, nr_of_tag
         product['tags'] = random.sample(tags, random.randint(nr_of_tags_per_product_lower_boundary, nr_of_tags_per_product_upper_boundary))
     return products
 
+
+def connectProductsToTags(
+    products, 
+    tags, 
+    NR_OF_TAGS_PER_PRODUCT_LOWER_BOUNDARY, 
+    NR_OF_TAGS_PER_PRODUCT_UPPER_BOUNDARY):
+    # if there are e.g. 4 tags, then I needs this: "tag_ids = [1,2,3,4]", 5 tag_ids: "tag_ids = [1,2,3,4,5]", etc.
+    tag_ids = list(map(lambda x: tags.index(x) + 1, tags)) # possible to add tags later on, wthout breaking the code.
+    # goal: for each user, assign a random number of payment methods:
+    list_with_dicts = []
+    for i in range(len(products)):
+        list_with_dicts.append({'product_id': i + 1}) # 
+        list_with_dicts[i]['tags'] = random.sample(tag_ids, random.randint(NR_OF_TAGS_PER_PRODUCT_LOWER_BOUNDARY, NR_OF_TAGS_PER_PRODUCT_UPPER_BOUNDARY))
+    # print('list with dicts:')
+    # print(list_with_dicts)
+    product_tags = []
+    for product in list_with_dicts:
+        for tag in product['tags']:
+            product_tags.append([product['product_id'], tag])
+    return product_tags
+
+def connectUsersToPaymentMethods(
+        users, 
+        payment_methods, 
+        NR_OF_PAYMENT_METHODS_PER_USER_LOWER_BOUNDARY, 
+        NR_OF_PAYMENT_METHODS_PER_USER_UPPER_BOUNDARY):
+    # if there are e.g. 4 payment methods, then I needs this: "payment_method_ids = [1,2,3,4]", 5 payment methods: "payment_method_ids = [1,2,3,4,5]", etc.
+    payment_method_ids = [(payment_methods.index(sublist) + 1) for sublist in payment_methods] # possible to add paymentmethod later on, wthout breaking the code.
+    # goal: for each user, assign a random number of payment methods:
+    list_with_dicts = []
+    for i in range(len(users)):
+        list_with_dicts.append({'user_id': i + 1}) # 
+        list_with_dicts[i]['payment_methods'] = random.sample(payment_method_ids, random.randint(NR_OF_PAYMENT_METHODS_PER_USER_LOWER_BOUNDARY, NR_OF_PAYMENT_METHODS_PER_USER_UPPER_BOUNDARY))
+    # print(user_list)
+    user_paymentmethods = []
+    for user in list_with_dicts:
+        for payment_method in user['payment_methods']:
+            user_paymentmethods.append([user['user_id'], payment_method])
+    # print(user_paymentmethods)
+    return user_paymentmethods
+
 def create_sample_data_product(product_range: int, product_quantity: int, sample_product_names_with_descriptions: list, NR_OF_USERS: int) -> list[list[str]]:
     users = []
     for i in range(product_range):
