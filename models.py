@@ -42,6 +42,18 @@ class Product(BaseModel):
     minimum_sales_price = DecimalField(max_digits=10, decimal_places=2)
     quantity = IntegerField()
 
+    class Meta:
+        indexes = (
+            '''
+                Create a unique index on user and name. This is to prevent a user from creating multiple products with the same name.
+                If e.g. user A has product B in quantity of 10, and user A wants to add another 5 of product B, the quantity of product B
+                should be updated to 15, instead of creating a new product B with quantity 5.
+            '''
+            (('user', 'name'), True),
+        )
+
+
+
 class PaymentMethod(BaseModel):
     id = AutoField()
     name = CharField()
