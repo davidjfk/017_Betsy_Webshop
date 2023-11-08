@@ -5,14 +5,14 @@ __human_name__ = "Betsy Webshop"
 # Add your code after this line
 
 from models import *
-from peewee import DoesNotExist
+from peewee import DoesNotExist, fn
 from setupdb import TRANSACTION_YEAR, TRANSACTION_WEEK, TRANSACTION_START_OF_DAY_HOUR, TRANSACTION_END_OF_DAY_HOUR
 from utils.utils import random_date, random_time
 
 def main():
 
-    search("Crimson") # search for products by name and description
-    # search("foo_bar") # result: message: "Search term 'foo_bar' not found."
+    # search("Minty Fresh") # search for products by name and description
+    search("foo_bar") # result: message: "Search term 'foo_bar' not found."
 
     # list_user_products(user_id=1) # For readability, I added the user_id as an argument.
     # list_user_products(user_id=3) # result is a list of products for user_id=3.
@@ -44,6 +44,41 @@ def search(term):
     query = Product.select().where(
     (Product.name.contains(term)) | (Product.description.contains(term))
     )
+    if query.exists():
+        for row in query:
+            print(row.id, row.user_id, row.name, row.description)
+            print('-' * 40)
+        return query # best practice: return value for e.g. testing purposes (out of scope of this exercise)
+    else:
+        print(f"Search term '{term}' not found.")
+        return f"Search term '{term}' not found."
+
+
+    # if query == []:
+    #     print(f"Search term '{term}' not found.")
+    #     return f"Search term '{term}' not found."
+    # for row in query:
+    #     print(row.id, row.user_id, row.name, row.description)
+    #     print('-' * 40)
+    # return query # best practice: return value for e.g. testing purposes (out of scope of this exercise)
+
+
+def search_with_spelling_mistakes(term):
+    '''
+    requirements:
+    1. Finally the search should account for spelling mistakes made by users 
+        and return products even if a spelling error is present.
+    '''
+    query = Product.select().where(
+    (Product.name.contains(term)) | (Product.description.contains(term))
+    )
+
+
+    query1 = Product.select().where(fn.SOUNDEX(Product.name) == fn.SOUNDEX(term))
+
+    # Use the fn.LEVENSHTEIN() function to calculate the edit distance between two strings
+    # query2 = Product.select().where(fn.LEVENSHTEIN(Product.name, term) <= 2)
+
     if query == []:
         print(f"Search term '{term}' not found.")
         return f"Search term '{term}' not found."
@@ -51,6 +86,8 @@ def search(term):
         print(row.id, row.user_id, row.name, row.description)
         print('-' * 40)
     return query # best practice: return value for e.g. testing purposes (out of scope of this exercise)
+
+
 
 def list_user_products(user_id):
     try:
