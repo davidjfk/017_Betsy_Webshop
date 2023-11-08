@@ -39,7 +39,7 @@ class Product(BaseModel):
     user = ForeignKeyField(User, backref="products")
     name = CharField()
     description = TextField()
-    minimum_sales_price = DecimalField()
+    minimum_sales_price = DecimalField(max_digits=10, decimal_places=2)
     quantity = IntegerField()
 
 class PaymentMethod(BaseModel):
@@ -47,7 +47,7 @@ class PaymentMethod(BaseModel):
     name = CharField()
     description = TextField()
     active = BooleanField()
-    fee = DecimalField() # fee is a percentage of the transaction amount
+    fee = DecimalField(max_digits=10, decimal_places=2) # fee is a percentage of the transaction amount
 
 class UserPaymentMethod(BaseModel):
     user = ForeignKeyField(User, backref='payment_methods')
@@ -59,10 +59,9 @@ class Transaction(BaseModel):
     product = ForeignKeyField(Product, backref="transactions") # backref: get all transactions for this product
     # User = ForeignKeyField(User, backref="transactions") # backref: get all transactions for this user
     quantity = IntegerField()
-    price = DecimalField()
+    price = DecimalField(max_digits=10, decimal_places=2)
     date = DateField()
     time = TimeField()
-
 
 
 class Tag(BaseModel):
