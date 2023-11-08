@@ -12,7 +12,7 @@ import datetime
 
 def assign_tags(products, tags, nr_of_tags_per_product_lower_boundary, nr_of_tags_per_product_upper_boundary):
     for product in products:
-        product['tags'] = random.sample(tags, random.randint(2, 6))
+        product['tags'] = random.sample(tags, random.randint(nr_of_tags_per_product_lower_boundary, nr_of_tags_per_product_upper_boundary))
     return products
 
 def create_sample_data_product(product_range: int, product_quantity: int, sample_product_names_with_descriptions: list, NR_OF_USERS: int) -> list[list[str]]:

@@ -8,24 +8,25 @@ from utils.utils import assign_tags, create_sample_data_product
 from utils.utils import create_sample_data_user, random_date, random_time
 
 from data.product_names_with_descriptions import sample_product_names_with_descriptions
+from data.tags import tags
 
 # CONFIGURATION:
 TRANSACTION_YEAR = 2028
 TRANSACTION_WEEK = 26
 TRANSACTION_START_OF_DAY_HOUR = 8
 TRANSACTION_END_OF_DAY_HOUR = 21
-PRODUCT_RANGE = 40 
+PRODUCT_RANGE = 10 
 '''
     product_range ==product_assortment == the collection of different products in the Betsy Webshop
     choose 4 or higher (because list transactions below assumes product_range >= 4)
     max 50, because in file product_names_with_descriptions.py (in folder data) there are 50 products. 
 '''
 PRODUCT_QUANTITY = 30  
-NR_OF_TAGS_PER_PRODUCT_LOWER_BOUNDARY = 2
+NR_OF_TAGS_PER_PRODUCT_LOWER_BOUNDARY = 3
 NR_OF_TAGS_PER_PRODUCT_UPPER_BOUNDARY = 6
 NR_OF_PAYMENT_METHODS_PER_USER_LOWER_BOUNDARY = 1
 NR_OF_PAYMENT_METHODS_PER_USER_UPPER_BOUNDARY = 4
-NR_OF_USERS = 6 # user == dual-sided marketplace participant == seller and/or buyer
+NR_OF_USERS = 16 # user == dual-sided marketplace participant == seller and/or buyer
 '''
 if product range = apple, laptop, banana, then PRODUCT_QUANTITY = 30 means that there are 30 apples, 30 laptops, 30 bananas in the Betsy Webshop after running setupdb.py
 '''
@@ -49,7 +50,7 @@ def populate_database():
 
     users = create_sample_data_user(NR_OF_USERS)
     for user in users:
-        print(user)
+        # print(user)
         User.create(last_name=user["last_name"], first_name=user["first_name"], phone_number=user["phone_number"], email=user["email"], street=user["street"], house_number=user["house_number"], postal_code=user["postal_code"], city=user["city"], country=user["country"], password=user["password"])
 
 
@@ -66,13 +67,13 @@ def populate_database():
     # if there are e.g. 4 payment methods, then I needs this: "payment_method_ids = [1,2,3,4]", 5 payment methods: "payment_method_ids = [1,2,3,4,5]", etc.
     payment_method_ids = [(payment_methods.index(sublist) + 1) for sublist in payment_methods] # possible to add paymentmethod later on, wthout breaking the code.
     # goal: for each user, assign a random number of payment methods:
-    user_list = []
-    for i in range(len([user for user in users if isinstance(user, dict)])):
-        user_list.append({'user_id': i + 1}) # 
-        user_list[i]['payment_methods'] = random.sample(payment_method_ids, random.randint(NR_OF_PAYMENT_METHODS_PER_USER_LOWER_BOUNDARY, NR_OF_PAYMENT_METHODS_PER_USER_UPPER_BOUNDARY))
+    list_with_dicts = []
+    for i in range(len(users)):
+        list_with_dicts.append({'user_id': i + 1}) # 
+        list_with_dicts[i]['payment_methods'] = random.sample(payment_method_ids, random.randint(NR_OF_PAYMENT_METHODS_PER_USER_LOWER_BOUNDARY, NR_OF_PAYMENT_METHODS_PER_USER_UPPER_BOUNDARY))
     # print(user_list)
     user_paymentmethods = []
-    for user in user_list:
+    for user in list_with_dicts:
         for payment_method in user['payment_methods']:
             user_paymentmethods.append([user['user_id'], payment_method])
     # print(user_paymentmethods)
@@ -144,11 +145,35 @@ def populate_database():
         Transaction.create(user_payment_method=transaction[0], product=transaction[1], quantity=transaction[2], price=transaction[3], date=random_date(TRANSACTION_YEAR, TRANSACTION_WEEK), time=random_time(TRANSACTION_START_OF_DAY_HOUR, TRANSACTION_END_OF_DAY_HOUR))
 
 
-    tags = ["book", "clothing", "electronics", "fashion", "finance", "food", "games", "home_appliance", "household_goods" "insurance", "literature", "mobile_phone", "music", "musical_instrument", "pet", "science", "sport", "shoes", "software", "sport", "toys", "travel"]
     for tag in tags:
         Tag.create(name=tag)
 
 
+    # if there are e.g. 4 tags, then I needs this: "tag_ids = [1,2,3,4]", 5 tag_ids: "tag_ids = [1,2,3,4,5]", etc.
+    tag_ids = list(map(lambda x: tags.index(x) + 1, tags)) # possible to add tags later on, wthout breaking the code.
+    # goal: for each user, assign a random number of payment methods:
+    
+    list_with_dicts = []
+    for i in range(len(products)):
+        list_with_dicts.append({'product_id': i + 1}) # 
+        list_with_dicts[i]['tags'] = random.sample(tag_ids, random.randint(NR_OF_TAGS_PER_PRODUCT_LOWER_BOUNDARY, NR_OF_TAGS_PER_PRODUCT_UPPER_BOUNDARY))
+    print('list with dicts:')
+    print(list_with_dicts)
+    product_tags = []
+    for product in list_with_dicts:
+        for tag in product['tags']:
+            product_tags.append([product['product_id'], tag])
+
+    for product_tag in product_tags:
+        ProductTag.create(product=product_tag[0], tag=product_tag[1])
+
+
+    '''
+        status: code below works, but...in the table, product_id is filled with the product name, 
+        not the product id. Also tag_id is filled with the tag name, not the tag id.
+        The product_id and tag_id should be used in the junction table ProductTag, so this is not good. 
+    '''
+    '''
     product_list = []
     for product in products:
         product_list.append({'name': product})
@@ -157,6 +182,8 @@ def populate_database():
     for product_with_tags in products_with_tags:
         for tag in product_with_tags['tags']:
             ProductTag.create(product=product_with_tags['name'], tag=tag)
+    '''
+
 
 
     db.close()

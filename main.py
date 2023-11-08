@@ -9,8 +9,8 @@ from models import *
 def main():
 
     # search("Crimson")
-    list_user_products(1)
-
+    # list_user_products(1)
+    list_products_per_tag(1)
 
 def search(term):
     '''
@@ -31,6 +31,8 @@ def search(term):
 
 def list_user_products(user_id):
     user = User.get(User.id == user_id)
+    print(user)
+    print(type(user))
     user_products = user.products
 
     for product in user_products:
@@ -40,7 +42,17 @@ def list_user_products(user_id):
 
 
 def list_products_per_tag(tag_id):
-    pass
+    query = (Product
+             .select()
+             .join(ProductTag)
+             .join(Tag)
+             .where(Tag.id == tag_id))
+    products = [product.name for product in query]
+    
+    for product in products:
+        print(product)
+        print('-' * 40)
+
 
 
 def add_product_to_catalog(user_id, product):
