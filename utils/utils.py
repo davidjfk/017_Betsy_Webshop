@@ -59,12 +59,15 @@ def connectUsersToPaymentMethods(
 def create_sample_data_product(product_range: int, product_quantity: int, sample_product_names_with_descriptions: list, NR_OF_USERS: int) -> list[list[str]]:
     users = []
     for i in range(product_range):
+        '''
+        To make data easier to read and understand, I made the minimum_sales_price the same nr as the product_id.
+        '''
         user = {
             "user_id": f"{random.randint(1, NR_OF_USERS)}", 
             # random user_id makes fn more difficult to test.
             "name": f"{sample_product_names_with_descriptions[i][0]}", 
             "description": f"{sample_product_names_with_descriptions[i][1]}",
-            "minimum_sales_price": f"{round((i + 1), 2)}",
+            "minimum_sales_price": f"{round((i + 1), 2)}", 
             "quantity":f"{product_quantity}",
         }
         users.append(user)
@@ -88,6 +91,26 @@ def create_sample_data_user(nr_of_users: int) -> list[list[str]]:
         users.append(user)
     return users
 
+def levenshtein_distance(s1, s2):
+    # source of this fn:  https://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance#Python
+    if len(s1) < len(s2):
+        return levenshtein_distance(s2, s1)
+
+    # len(s1) >= len(s2)
+    if len(s2) == 0:
+        return len(s1)
+
+    previous_row = range(len(s2) + 1)
+    for i, c1 in enumerate(s1):
+        current_row = [i + 1]
+        for j, c2 in enumerate(s2):
+            insertions = previous_row[j + 1] + 1 # j+1 instead of j since previous_row and current_row are one character longer
+            deletions = current_row[j] + 1       # than s2
+            substitutions = previous_row[j] + (c1 != c2)
+            current_row.append(min(insertions, deletions, substitutions))
+        previous_row = current_row
+    
+    return previous_row[-1]
 
 def random_date(year: int, week: int) -> str:
     first_day = datetime.datetime.strptime(f'{year}-W{week}-1', '%G-W%V-%u').date()
@@ -99,3 +122,14 @@ def random_time(transaction_start_of_day_hour: int, transaction_end_of_day_hour:
     hour = random.randint(transaction_start_of_day_hour, transaction_end_of_day_hour)
     minute = random.randint(0, 59)
     return datetime.time(hour=hour, minute=minute).strftime('%H:%M')
+
+def remove_duplicates(result):
+    seen = set()
+    result_no_duplicates = []
+    for item in result:
+        # Check if the first element of the nested list is already in the set
+        if item[0] not in seen:
+            # Add it to the set and the result list
+            seen.add(item[0])
+            result_no_duplicates.append(item)
+    return result_no_duplicates

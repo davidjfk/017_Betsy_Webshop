@@ -79,7 +79,7 @@ def populate_database():
     #     [3, 4],
     #     [4, 1],
     #     [4, 2],
-    #     [5, 3],
+        # [5, 3],
     #     [5, 4],
     #     [6, 1],
     #     [6, 2],
@@ -116,17 +116,14 @@ def populate_database():
         [6, 4, 10, 27], # selling at a huge profit
     ]
     '''
-    product_id and price have the same number: e.g.
-    product_id=2, price=2 euro
-    product_id=3, price=3 euro
-    product_id=4, price=4 euro
-    etc.
+    Transaction price >= minimum_viable_price.
+    Minimum_viable_price is the minimum price that a seller is willing to sell a product for.
+    Fn create_sample_data_product() (in utils/utils.py) creates a list of products with a minimum_sales_price.
 
-    This is done on purpose to make it easier to read the data.
-
-    e.g. last nested list in list transactions above:
-    product_id = 4, so the minimum_viable_price is 4 euro. Seller sells product for 27, 
-    making a huge profit.
+    Rule: product and minimum_sales_price have the same number.
+    This is done to make the data easier to read and understand, e.g. last nested list in list transactions above:
+    product_id = 4, so the minimum_viable_price is 4 euro. 
+    Seller sells product for 27, (27 > 4), so making a huge profit.
     '''
     for transaction in transactions:
         Transaction.create(user_payment_method=transaction[0], product=transaction[1], quantity=transaction[2], price=transaction[3], date=random_date(TRANSACTION_YEAR, TRANSACTION_WEEK), time=random_time(TRANSACTION_START_OF_DAY_HOUR, TRANSACTION_END_OF_DAY_HOUR))
