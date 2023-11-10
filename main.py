@@ -3,24 +3,19 @@ __winc_id__ = "d7b474e9b3a54d23bca54879a4f1855b"
 __human_name__ = "Betsy Webshop"
 
 # Add your code after this line
-
 from models import *
 from peewee import DoesNotExist, fn
-from Levenshtein import distance as lev
-from playhouse.sqlite_ext import SqliteExtDatabase
-
 from setupdb import TRANSACTION_YEAR, TRANSACTION_WEEK, TRANSACTION_START_OF_DAY_HOUR, TRANSACTION_END_OF_DAY_HOUR
 from utils.utils import levenshtein_distance, random_date, random_time, remove_duplicates
-
-import rich
 from rich.table import Table
 from rich.console import Console
 
-
 def main():
 
+    # Important: before calling the following fns, first reset the configuration variables at the start of setupdb.py to their default values. 
+
     # search("minty Fresh") # 1 search result
-    # search("Mi") # 4 search results
+    search("Mi") # 4 search results
     # search("foo_bar") # result: message: "Search term 'foo_bar' not found."
 
     # search_with_spelling_mistakes("KrimsoM Sky", levenshstein_comparison_variable = 2) # 0 search result
@@ -73,8 +68,6 @@ def search(search_term):
     2. search for products by name and description
     '''
     query = Product.select().where(fn.lower(Product.name).contains(search_term.lower()) | fn.lower(Product.description).contains(search_term.lower()))
-    # (Product.name.contains(term)) | (Product.description.contains(term))
-    # )
     if query.exists():
         table = Table(title=f"Search term: << {search_term} >>, searching without spelling mistakes", show_header=True, header_style="bold magenta")
         table.add_column("product_id", justify="right")
@@ -83,16 +76,12 @@ def search(search_term):
         table.add_column("description", justify="left")
         table.add_column("price", justify="right")
         table.add_column("quantity", justify="right")
-
-        # for row in query:
-            # print(row.id, row.user_id, row.name, row.description, int(row.minimum_sales_price), row.quantity)
-            # print('-' * 40)
         
         for row in query:
             table.add_row(str(row.id), str(row.user_id), row.name, row.description, str(int(row.minimum_sales_price)), str(row.quantity))
         console = Console()
         console.print(table)
-        return query # best practice: return value for e.g. testing purposes (out of scope of this exercise)
+        return query # best practice: return value for e.g. testing purposes later on (out of scope of this exercise)
     else:
         print(f"Search term '{search_term}' not found.")
         return f"Search term '{search_term}' not found."
@@ -123,8 +112,6 @@ def search_with_spelling_mistakes(search_term: str, levenshstein_comparison_vari
     table.add_column("description", justify="left")
     table.add_column("price", justify="right")
     table.add_column("quantity", justify="right")
-
-
 
     for row in results_that_match_search_term:
         print(row)
@@ -159,8 +146,6 @@ def list_user_products(user_id):
     table.add_column("quantity", justify="right")
 
     for product in user_products:
-        # print(product.id, product.name, product.description, product.minimum_sales_price, product.quantity)
-        # print('-' * 40) 
         table.add_row(str(product.id), str(product.user.id), product.name, product.description, str(int(product.minimum_sales_price)), str(product.quantity))
     console = Console()
     console.print(table)
@@ -180,12 +165,7 @@ def list_products_per_tag(tag_id):
         table.add_column("product_name", justify="left")
         table.add_column("description", justify="left")
         table.add_column("price", justify="right")
-        table.add_column("quantity", justify="right")
-
-        # for row in query:
-            # print(row.id, row.user_id, row.name, row.description, int(row.minimum_sales_price), row.quantity)
-            # print('-' * 40)
-        
+        table.add_column("quantity", justify="right")  
         for row in query:
             table.add_row(str(row.id), str(row.user_id), row.name, row.description, str(int(row.minimum_sales_price)), str(row.quantity))
         console = Console()
@@ -198,22 +178,20 @@ def list_products_per_tag(tag_id):
 
 def add_product_to_catalog(user_id, product_name, description, minimum_sales_price, quantity, list_user_products = list_user_products):
     'requirements mention descripton, price and quantity as well, so I have added them to the function.'
-    '''
-    bug: if you add same product to same user twice, you get the following (correct) error message:
-    peewee.IntegrityError: UNIQUE constraint failed: product.user_id, product.name
-    2do: the second time, I want to update the QUANTITY of the product, instead of trying to add the product to the same user again and
-    getting an error message.
-    '''
     try:
         user = User.get(User.id == user_id)
     except DoesNotExist:
         print("User_id does not exist in table User.")
         return "User_id does not exist in table User."
-    product = Product.create(user=user, name=product_name, description=description, minimum_sales_price=minimum_sales_price, quantity=quantity)
-    
+    # Create product only for user, if it does not exist yet:
+    product, created = Product.get_or_create(user=user, name=product_name, defaults={'description': description, 'minimum_sales_price': minimum_sales_price, 'quantity': quantity})
+    if not created: # not created == product already exists
+        product.quantity += quantity
+        product.description = description
+        product.minimum_sales_price = minimum_sales_price
+        product.save()
     # show the result of adding the product to the catalog:
     list_user_products(user_id)
-    
     return product 
 
 
@@ -282,35 +260,15 @@ def purchase_product(user_payment_method_id, product_id, price, quantity, show_a
     except DoesNotExist:
         print("Product_id does not exist in table Product.")
         return "Product_id does not exist in table Product."
-
     Transaction.create( product=product, 
                         user_payment_method=user_payment_method, 
                         quantity=quantity, 
                         price=price, 
                         date=random_date(TRANSACTION_YEAR, TRANSACTION_WEEK), 
                         time=random_time(TRANSACTION_START_OF_DAY_HOUR, TRANSACTION_END_OF_DAY_HOUR))
-    
     # show the result of purchasing a product:
     show_all_transactions()
-    
 
-
-'''
-def remove_product(product_id, list_user_products = list_user_products):
-    try:
-        product = Product.get(Product.id == product_id)
-    except DoesNotExist:
-        print("Product_id does not exist in table Product.")
-        return "Product_id does not exist in table Product."
-    user_id = product.user_id
-    print(f'user_id: {user_id}')
-    product.delete_instance()
-    print(f'user_id: {user_id}')
-    # show the result of deleting the product from the catalog:
-    list_user_products(user_id)
-    return product
-'''
-    
 
 def remove_product(product_id, list_user_products = list_user_products):
     try:
@@ -318,19 +276,13 @@ def remove_product(product_id, list_user_products = list_user_products):
     except DoesNotExist:
         print("Product_id does not exist in table Product.")
         return "Product_id does not exist in table Product."
-    
-    # Check if there are any transactions associated with the product
     if product.transactions.exists():
         print("Cannot delete product. There are transactions associated with this product.")
         return "Cannot delete product. There are transactions associated with this product."
-    
-    # Check if there are any tags associated with the product
     if product.product_tags.exists():
         print("There are tags associated with this product...let's delete them.")
-        # product.product_tags.delete() # not working
         for product_tag in product.product_tags:
             product_tag.delete_instance()
-    
     user_id = product.user_id
     print(f'user_id: {user_id}')
     product.delete_instance()
@@ -342,5 +294,3 @@ def remove_product(product_id, list_user_products = list_user_products):
 
 if __name__ == "__main__":
     main()
-
-

@@ -7,27 +7,26 @@ sys.path.append('c:\\dev\\pytWinc\\betsy-webshop\\utils')
 from utils.utils import assign_tags, connectUsersToPaymentMethods
 from utils.utils import connectProductsToTags, create_sample_data_product
 from utils.utils import create_sample_data_user, random_date, random_time
-
 from data.product_names_with_descriptions import sample_product_names_with_descriptions
 from data.tags import tags
 
 # CONFIGURATION:
-TRANSACTION_YEAR = 2028
-TRANSACTION_WEEK = 26
-TRANSACTION_START_OF_DAY_HOUR = 8
-TRANSACTION_END_OF_DAY_HOUR = 21
-PRODUCT_RANGE = 10 
+TRANSACTION_YEAR = 2028  # default: 2028
+TRANSACTION_WEEK = 26    # default: 26
+TRANSACTION_START_OF_DAY_HOUR = 8 # default: 8
+TRANSACTION_END_OF_DAY_HOUR = 21 # default: 21
+PRODUCT_RANGE = 10 # default: 10
 '''
     product_range ==product_assortment == the collection of different products in the Betsy Webshop
     choose 4 or higher (because list transactions below assumes product_range >= 4)
     max 50, because in file product_names_with_descriptions.py (in folder data) there are 50 products. 
 '''
-PRODUCT_QUANTITY = 30  
-NR_OF_TAGS_PER_PRODUCT_LOWER_BOUNDARY = 3
-NR_OF_TAGS_PER_PRODUCT_UPPER_BOUNDARY = 6
-NR_OF_PAYMENT_METHODS_PER_USER_LOWER_BOUNDARY = 1
-NR_OF_PAYMENT_METHODS_PER_USER_UPPER_BOUNDARY = 4
-NR_OF_USERS = 16 # user == dual-sided marketplace participant == seller and/or buyer
+PRODUCT_QUANTITY = 30  # default: 30
+NR_OF_TAGS_PER_PRODUCT_LOWER_BOUNDARY = 3 # default: 3
+NR_OF_TAGS_PER_PRODUCT_UPPER_BOUNDARY = 6 # default: 6
+NR_OF_PAYMENT_METHODS_PER_USER_LOWER_BOUNDARY = 1 # default: 1
+NR_OF_PAYMENT_METHODS_PER_USER_UPPER_BOUNDARY = 4 # default: 4
+NR_OF_USERS = 16 # user of the Betsy Webshop == buyer and/or seller == dual-sided marketplace participant # default: 16
 '''
 if product range = apple, laptop, banana, then PRODUCT_QUANTITY = 30 means that there are 30 apples, 30 laptops, 30 bananas in the Betsy Webshop after running setupdb.py
 '''
@@ -67,24 +66,18 @@ def populate_database():
 
 
     user_paymentmethods = connectUsersToPaymentMethods(users, payment_methods, NR_OF_PAYMENT_METHODS_PER_USER_LOWER_BOUNDARY, NR_OF_PAYMENT_METHODS_PER_USER_UPPER_BOUNDARY)
-    # problem: following list works, but is hard-coded:
-    # user_paymentmethods = [
-    #     [1, 2],
-    #     [1, 3],
-    #     [2, 2],
-    #     [2, 4],
-    #     [3, 1],
-    #     [3, 2],
-    #     [3, 3],
-    #     [3, 4],
-    #     [4, 1],
-    #     [4, 2],
-        # [5, 3],
-    #     [5, 4],
-    #     [6, 1],
-    #     [6, 2],
-    #     [6, 4],
-    # ]
+    '''
+    e.g. of user_paymentmethods:
+    user_paymentmethods = [
+        [1, 2],
+        [2, 2],
+        [3, 2],
+        [4, 2],
+        [5, 3],
+        [5, 4],
+        [6, 1],
+    ]
+    '''
     for user_paymentmethod in user_paymentmethods:
         UserPaymentMethod.create(user=user_paymentmethod[0], payment_method=user_paymentmethod[1])
 
@@ -93,11 +86,6 @@ def populate_database():
     for product in products:
         Product.create(user_id=product["user_id"], name=product["name"], description=product["description"], minimum_sales_price=product["minimum_sales_price"], quantity=product["quantity"])
 
-
-    '''
-    Hard-coded list of transactions (on purpose, so you can quickly manually create or tweak custom transaction(s) 
-    for testing purposes):
-    '''
     transactions = [
         [1, 2, 3, 3],
         [2, 3, 4, 4],
@@ -137,22 +125,6 @@ def populate_database():
 
     for product_tag in product_tags:
         ProductTag.create(product=product_tag[0], tag=product_tag[1])
-
-    '''
-        status: code below works, but...in the table, product_id is filled with the product name, 
-        not the product id. Also tag_id is filled with the tag name, not the tag id.
-        The product_id and tag_id should be used in the junction table ProductTag, so this is not good. 
-    '''
-    '''
-    product_list = []
-    for product in products:
-        product_list.append({'name': product})
-    products_with_tags = assign_tags(products, tags, NR_OF_TAGS_PER_PRODUCT_LOWER_BOUNDARY, NR_OF_TAGS_PER_PRODUCT_UPPER_BOUNDARY)  
-    # print(products_with_tags)
-    for product_with_tags in products_with_tags:
-        for tag in product_with_tags['tags']:
-            ProductTag.create(product=product_with_tags['name'], tag=tag)
-    '''
 
     db.close()
 

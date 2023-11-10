@@ -10,17 +10,14 @@ from peewee import (
     IntegerField,
     Model,
     SqliteDatabase,
-    PostgresqlDatabase,
     TimeField,
 )
-from playhouse.sqlite_ext import SqliteExtDatabase
 
 db = SqliteDatabase("database.db")
 
 class BaseModel(Model):
     class Meta:
         database = db
-
 
 class User(BaseModel):
     id = AutoField()
@@ -34,8 +31,6 @@ class User(BaseModel):
     city = CharField()
     country = CharField()
     password = CharField()
-
-
 
 class Product(BaseModel):
     id = AutoField()
@@ -75,7 +70,6 @@ class Transaction(BaseModel):
     price = DecimalField(max_digits=10, decimal_places=2)
     date = DateField()
     time = TimeField()
-
 
 class Tag(BaseModel):
     id = AutoField()
