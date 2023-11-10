@@ -4,24 +4,31 @@ import random
 
 sys.path.append('c:\\dev\\pytWinc\\betsy-webshop')
 sys.path.append('c:\\dev\\pytWinc\\betsy-webshop\\utils')
-from utils.utils import assign_payment_methods, assign_tags, create_sample_data_product
+from utils.utils import assign_tags, connectUsersToPaymentMethods
+from utils.utils import connectProductsToTags, create_sample_data_product
 from utils.utils import create_sample_data_user, random_date, random_time
-
+from data.product_names_with_descriptions import sample_product_names_with_descriptions
+from data.tags import tags
 
 # CONFIGURATION:
-TRANSACTION_YEAR = 2028
-TRANSACTION_WEEK = 26
-TRANSACTION_START_OF_DAY_HOUR = 8
-TRANSACTION_END_OF_DAY_HOUR = 21
-PRODUCT_RANGE = 6 # choose 4 or higher (because list transactions below assumes product_range >= 4)
-# product_assortment == the collection of different products in the Betsy Webshop
-NR_OF_PRODUCTS_FOR_EACH_PRODUCT = 30 
-NR_OF_TAGS_PER_PRODUCT_LOWER_BOUNDARY = 2
-NR_OF_TAGS_PER_PRODUCT_UPPER_BOUNDARY = 6
-NR_OF_PAYMENT_METHODS_PER_USER_LOWER_BOUNDARY = 1
-NR_OF_PAYMENT_METHODS_PER_USER_UPPER_BOUNDARY = 4
+TRANSACTION_YEAR = 2028  # default: 2028
+TRANSACTION_WEEK = 26    # default: 26
+TRANSACTION_START_OF_DAY_HOUR = 8 # default: 8
+TRANSACTION_END_OF_DAY_HOUR = 21 # default: 21
+PRODUCT_RANGE = 10 # default: 10
 '''
-if product range = apple, laptop, banana, then nr_of_products_for_each_product = 30 means that there are 30 apples, 30 laptops, 30 bananas in the Betsy Webshop after running setupdb.py
+    product_range ==product_assortment == the collection of different products in the Betsy Webshop
+    choose 4 or higher (because list transactions below assumes product_range >= 4)
+    max 50, because in file product_names_with_descriptions.py (in folder data) there are 50 products. 
+'''
+PRODUCT_QUANTITY = 30  # default: 30
+NR_OF_TAGS_PER_PRODUCT_LOWER_BOUNDARY = 3 # default: 3
+NR_OF_TAGS_PER_PRODUCT_UPPER_BOUNDARY = 6 # default: 6
+NR_OF_PAYMENT_METHODS_PER_USER_LOWER_BOUNDARY = 1 # default: 1
+NR_OF_PAYMENT_METHODS_PER_USER_UPPER_BOUNDARY = 4 # default: 4
+NR_OF_USERS = 16 # user of the Betsy Webshop == buyer and/or seller == dual-sided marketplace participant # default: 16
+'''
+if product range = apple, laptop, banana, then PRODUCT_QUANTITY = 30 means that there are 30 apples, 30 laptops, 30 bananas in the Betsy Webshop after running setupdb.py
 '''
 
 def main():
@@ -40,9 +47,10 @@ def populate_database():
 
     db.create_tables([User, Product, PaymentMethod, Transaction, Tag, ProductTag, UserPaymentMethod])
 
-    users = create_sample_data_user(6)
+
+    users = create_sample_data_user(NR_OF_USERS)
     for user in users:
-        print(user)
+        # print(user)
         User.create(last_name=user["last_name"], first_name=user["first_name"], phone_number=user["phone_number"], email=user["email"], street=user["street"], house_number=user["house_number"], postal_code=user["postal_code"], city=user["city"], country=user["country"], password=user["password"])
 
 
@@ -55,50 +63,29 @@ def populate_database():
     for payment_method in payment_methods:
         PaymentMethod.create(name=payment_method[0], description=payment_method[1], active=payment_method[3], fee=payment_method[4])
 
-    
-    # if there are e.g. 4 payment methods, then I needs this: "payment_method_ids = [1,2,3,4]", 5 payment methods: "payment_method_ids = [1,2,3,4,5]", etc.
-    payment_method_ids = [(payment_methods.index(sublist) + 1) for sublist in payment_methods] # possible to add paymentmethod later on, wthout breaking the code.
-    # goal: for each user, assign a random number of payment methods:
-    user_list = []
-    for i in range(len([user for user in users if isinstance(user, dict)])):
-        user_list.append({'user_id': i + 1}) # 
-        user_list[i]['payment_methods'] = random.sample(payment_method_ids, random.randint(NR_OF_PAYMENT_METHODS_PER_USER_LOWER_BOUNDARY, NR_OF_PAYMENT_METHODS_PER_USER_UPPER_BOUNDARY))
-    # print(user_list)
-    user_paymentmethods = []
-    for user in user_list:
-        for payment_method in user['payment_methods']:
-            user_paymentmethods.append([user['user_id'], payment_method])
-    # print(user_paymentmethods)
-    # problem: following list works, but is hard-coded:
-    # user_paymentmethods = [
-    #     [1, 2],
-    #     [1, 3],
-    #     [2, 2],
-    #     [2, 4],
-    #     [3, 1],
-    #     [3, 2],
-    #     [3, 3],
-    #     [3, 4],
-    #     [4, 1],
-    #     [4, 2],
-    #     [5, 3],
-    #     [5, 4],
-    #     [6, 1],
-    #     [6, 2],
-    #     [6, 4],
-    # ]
+
+
+    user_paymentmethods = connectUsersToPaymentMethods(users, payment_methods, NR_OF_PAYMENT_METHODS_PER_USER_LOWER_BOUNDARY, NR_OF_PAYMENT_METHODS_PER_USER_UPPER_BOUNDARY)
+    '''
+    e.g. of user_paymentmethods:
+    user_paymentmethods = [
+        [1, 2],
+        [2, 2],
+        [3, 2],
+        [4, 2],
+        [5, 3],
+        [5, 4],
+        [6, 1],
+    ]
+    '''
     for user_paymentmethod in user_paymentmethods:
         UserPaymentMethod.create(user=user_paymentmethod[0], payment_method=user_paymentmethod[1])
 
 
-    products = create_sample_data_product(PRODUCT_RANGE, NR_OF_PRODUCTS_FOR_EACH_PRODUCT)
+    products = create_sample_data_product(PRODUCT_RANGE, PRODUCT_QUANTITY, sample_product_names_with_descriptions, NR_OF_USERS)
     for product in products:
         Product.create(user_id=product["user_id"], name=product["name"], description=product["description"], minimum_sales_price=product["minimum_sales_price"], quantity=product["quantity"])
 
-
-    '''
-    Hard-coded list of transactions (on purpose, so you can quickly manually create or tweak custom transaction(s) for testing purposes):
-    '''
     transactions = [
         [1, 2, 3, 3],
         [2, 3, 4, 4],
@@ -117,39 +104,29 @@ def populate_database():
         [6, 4, 10, 27], # selling at a huge profit
     ]
     '''
-    product_id and price have the same number: e.g.
-    product_id=2, price=2 euro
-    product_id=3, price=3 euro
-    product_id=4, price=4 euro
-    etc.
+    Transaction price >= minimum_viable_price.
+    Minimum_viable_price is the minimum price that a seller is willing to sell a product for.
+    Fn create_sample_data_product() (in utils/utils.py) creates a list of products with a minimum_sales_price.
 
-    This is done on purpose to make it easier to read the data.
-
-    e.g. last nested list in list transactions above:
-    product_id = 4, so the minimum_viable_price is 4 euro. Seller sells product for 27, 
-    making a huge profit.
+    Rule: product and minimum_sales_price have the same number.
+    This is done to make the data easier to read and understand, e.g. last nested list in list transactions above:
+    product_id = 4, so the minimum_viable_price is 4 euro. 
+    Seller sells product for 27, (27 > 4), so making a huge profit.
     '''
     for transaction in transactions:
         Transaction.create(user_payment_method=transaction[0], product=transaction[1], quantity=transaction[2], price=transaction[3], date=random_date(TRANSACTION_YEAR, TRANSACTION_WEEK), time=random_time(TRANSACTION_START_OF_DAY_HOUR, TRANSACTION_END_OF_DAY_HOUR))
 
 
-    tags = ["book", "clothing", "electronics", "fashion", "finance", "food", "games", "home_appliance", "household_goods" "insurance", "literature", "mobile_phone", "music", "musical_instrument", "pet", "science", "sport", "shoes", "software", "sport", "toys", "travel"]
     for tag in tags:
         Tag.create(name=tag)
 
 
-    product_list = []
-    for product in products:
-        product_list.append({'name': product})
-    products_with_tags = assign_tags(products, tags, NR_OF_TAGS_PER_PRODUCT_LOWER_BOUNDARY, NR_OF_TAGS_PER_PRODUCT_UPPER_BOUNDARY)  
-    # print(products_with_tags)
-    for product_with_tags in products_with_tags:
-        for tag in product_with_tags['tags']:
-            ProductTag.create(product=product_with_tags['name'], tag=tag)
+    product_tags = connectProductsToTags(products, tags, NR_OF_TAGS_PER_PRODUCT_LOWER_BOUNDARY, NR_OF_TAGS_PER_PRODUCT_UPPER_BOUNDARY)
 
+    for product_tag in product_tags:
+        ProductTag.create(product=product_tag[0], tag=product_tag[1])
 
     db.close()
 
 if __name__ == "__main__":
     main()
-

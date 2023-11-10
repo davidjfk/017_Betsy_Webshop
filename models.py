@@ -32,22 +32,30 @@ class User(BaseModel):
     country = CharField()
     password = CharField()
 
-
-
 class Product(BaseModel):
     id = AutoField()
     user = ForeignKeyField(User, backref="products")
     name = CharField()
     description = TextField()
-    minimum_sales_price = DecimalField()
+    minimum_sales_price = DecimalField(max_digits=10, decimal_places=2)
     quantity = IntegerField()
+
+    class Meta:
+        indexes = (
+            (('user', 'name'), True),
+        )
+    '''
+        Create a unique index on user and name. This is to prevent a user from creating multiple products with the same name.
+        If e.g. user A has product B in quantity of 10, and user A wants to add another 5 of product B, the quantity of product B
+        should be updated to 15, instead of creating a new product B with quantity 5.
+    '''
 
 class PaymentMethod(BaseModel):
     id = AutoField()
     name = CharField()
     description = TextField()
     active = BooleanField()
-    fee = DecimalField() # fee is a percentage of the transaction amount
+    fee = DecimalField(max_digits=10, decimal_places=2) # fee is a percentage of the transaction amount
 
 class UserPaymentMethod(BaseModel):
     user = ForeignKeyField(User, backref='payment_methods')
@@ -59,19 +67,15 @@ class Transaction(BaseModel):
     product = ForeignKeyField(Product, backref="transactions") # backref: get all transactions for this product
     # User = ForeignKeyField(User, backref="transactions") # backref: get all transactions for this user
     quantity = IntegerField()
-    price = DecimalField()
+    price = DecimalField(max_digits=10, decimal_places=2)
     date = DateField()
     time = TimeField()
 
-
-
 class Tag(BaseModel):
     id = AutoField()
-    name = CharField()
+    name = CharField(unique=True)
 
 class ProductTag(BaseModel):
     id = AutoField()
     product = ForeignKeyField(Product, backref="product_tags") # backref: get all producttags for this product
     tag = ForeignKeyField(Tag, backref="product_tags") # backref: get all producttags for this tag
-
-
